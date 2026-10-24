@@ -1,0 +1,147 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 Int             @id @default(autoincrement())
+  name               String
+  email              String          @unique
+  passwordHash       String
+  role               String          // "Requester", "ITStaff", "Administrator"
+  isActive           Boolean         @default(true)
+  mustChangePassword Boolean         @default(true)
+  createdAt          DateTime        @default(now())
+  ticketsCreated     Ticket[]        @relation("TicketRequester")
+  ticketsOwned       Ticket[]        @relation("TicketOwner")
+  comments           PublicComment[]
+  internalNotes      InternalNote[]
+  actionsTaken       ActionTaken[]
+  sessions           Session[]
+}
+
+model Session {
+  id        Int      @id @default(autoincrement())
+  tokenHash String   @unique
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  tickets   Ticket[]
+}
+
+model RelatedSystem {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model Ticket {
+  id                          Int             @id @default(autoincrement())
+  ticketNo                    String          @unique
+  requesterId                 Int
+  requester                   User            @relation("TicketRequester", fields: [requesterId], references: [id])
+  ownerId                     Int?
+  owner                       User?           @relation("TicketOwner", fields: [ownerId], references: [id])
+  categoryId                  Int
+  category                    Category        @relation(fields: [categoryId], references: [id])
+  relatedSystem               String
+  summary                     String
+  description                 String
+  requestedPriority           String          // "LOW", "MEDIUM", "HIGH"
+  itPriority                  String?         // "LOW", "MEDIUM", "HIGH"
+  currentStatus               String          @default("New")
+  requesterResolvedIndication Boolean         @default(false)
+  createdAt                   DateTime        @default(now())
+  updatedAt                   DateTime        @updatedAt
+  attachments                 Attachment[]
+  publicComments              PublicComment[]
+  internalNotes               InternalNote[]
+  actionsTaken                ActionTaken[]
+}
+
+model Attachment {
+  id           Int             @id @default(autoincrement())
+  ticketId     Int
+  ticket       Ticket          @relation(fields: [ticketId], references: [id])
+  filename     String
+  originalName String
+  size         Int
+  mimeType     String
+  isRemoved    Boolean         @default(false)
+  removeReason String?
+  createdAt    DateTime        @default(now())
+  blob         AttachmentBlob?
+}
+
+model AttachmentBlob {
+  id           Int        @id @default(autoincrement())
+  attachmentId Int        @unique
+  attachment   Attachment @relation(fields: [attachmentId], references: [id], onDelete: Cascade)
+  data         Bytes
+}
+
+model PublicComment {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  ticket    Ticket   @relation(fields: [ticketId], references: [id])
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model InternalNote {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  ticket    Ticket   @relation(fields: [ticketId], references: [id])
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model ActionTaken {
+  id                Int      @id @default(autoincrement())
+  ticketId          Int
+  ticket            Ticket   @relation(fields: [ticketId], references: [id])
+  actionDateTime    DateTime @default(now())
+  actionDescription String
+  result            String?
+  performedById     Int
+  performedBy       User     @relation(fields: [performedById], references: [id])
+  followUpRequired  Boolean  @default(false)
+  followUpNote      String?
+  attachmentNotes   String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model LoginAttempt {
+  id          Int       @id @default(autoincrement())
+  ip          String
+  email       String
+  failedCount Int       @default(1)
+  lockedUntil DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([ip, email])
+  @@index([ip])
+  @@index([email])
+  @@index([lockedUntil])
+}
