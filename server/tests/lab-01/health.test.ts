@@ -9,7 +9,7 @@ describe("GET /api/health & /api/ready", () => {
   it("returns 200 with status ok and the service name", async () => {
     const res = await request(app).get("/api/health");
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ status: "ok", service: "TokTickIT API" });
+    expect(res.body).toEqual({ status: "ok", service: "WRONG NAME" });
   });
 
   it("returns 200 ready when database is reachable", async () => {
