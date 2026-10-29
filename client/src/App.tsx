@@ -889,7 +889,7 @@ export default function App() {
                     <i className="bi bi-shield-lock-fill"></i>
                   </div>
                   <h1 className="h3 fw-bold text-green-primary">Sign in to your account</h1>
-                  <p className="text-muted small">Enter your email and password to access the platform (release 2)</p>
+                  <p className="text-muted small">Enter your email and password to access the platform (release 3)</p>
                 </div>
 
                 {loginError && <div className="alert alert-danger py-2 px-3 small">{loginError}</div>}
